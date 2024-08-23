@@ -75,7 +75,7 @@ public class Stage implements IStage {
     /**
      * Контекст стадии, включающий данные для выполнения стадии.
      */
-    private StageContext stageContext;
+
 
     /**
      * Конструктор для создания стадии с заданным основным обработчиком.

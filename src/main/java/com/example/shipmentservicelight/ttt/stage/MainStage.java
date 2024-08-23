@@ -1,10 +1,15 @@
 package com.example.shipmentservicelight.ttt.stage;
 
+import com.example.shipmentservicelight.ttt.annotations.StageInject;
 import com.example.shipmentservicelight.ttt.args.HandlerArgumentWithValue;
 import com.example.shipmentservicelight.ttt.args.HandlerArgumentsValidator;
 import com.example.shipmentservicelight.ttt.enums.StagePhases;
+import com.example.shipmentservicelight.ttt.ex.NoBeanOfType;
 import com.example.shipmentservicelight.ttt.ex.StageException;
 import com.example.shipmentservicelight.ttt.handlers.AbstractHandler;
+import com.example.shipmentservicelight.ttt.handlers.IHandlerExecutor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.util.List;
 
@@ -18,7 +23,9 @@ import java.util.List;
  * </p>
  */
 public class MainStage extends Stage implements InvocationStage, ConfigurationStage{
-
+    @Setter()
+    @Accessors(chain = true)
+    private StageContext stageContext;
     /**
      * Ебаная заглушка
      *
@@ -40,7 +47,7 @@ public class MainStage extends Stage implements InvocationStage, ConfigurationSt
 
 
     /**
-     * Короч жта залупа нужна когда уже накидан шаблон стадий и новых добовляться не планируется
+     * Короч эта залупа нужна когда уже накидан шаблон стадий и новых добовляться не планируется
      * Она устанавливает всем своим дочерним стадиям всяки настройки, может прокинуть контекст и т.д
      * После вызова этого метода можно выполнять {@code invoke}
      * Этот метод также выполняет маппинг(ниже опишу в классе  {@code Stage}) классов и переводит стадию в фазу "CONFIGURED".
@@ -49,18 +56,33 @@ public class MainStage extends Stage implements InvocationStage, ConfigurationSt
      * @return текущий экземпляр {@code MainStage} после завершения конфигурации.
      * @throws StageException если стадия находится не в фазе "BUILDING".
      */
+
+
     @Override
     public MainStage configurate() {
         if(this.stagePhase != StagePhases.BUILDING)
             throw new StageException("Ты конфигурируещь какую то залупу", this.stagePhase);
-
         //TODO выполнить подготовку обработчиков, внедрить зависимости и т.д
-
-
+        applyToAllStages(stage -> stage.setStagePhase(StagePhases.CONFIGURATION));
+        this.inject();
         mappingClasses(this.mainOutPutClasses);
-
         applyToAllStages(stage -> stage.setStagePhase(StagePhases.CONFIGURED));
         return this;
+    }
+    private void inject(){
+        this.applyToAllStages(stage->{
+                    stage.mainHandlerExecutor.getFieldsByAnnotation(StageInject.class)
+                            .forEach(field->{
+                                try {
+                                    field.setAccessible(true);
+                                    field.set(stage.mainHandler, this.stageContext.getBean(field.getType()));
+                                    field.setAccessible(false);
+                                }catch (IllegalAccessException e) {
+                                    throw new StageException(stage.stagePhase);
+                                }
+                            });
+                }
+        );
     }
 
     /**
