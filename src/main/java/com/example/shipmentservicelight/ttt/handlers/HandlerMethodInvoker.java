@@ -9,9 +9,11 @@ import com.example.shipmentservicelight.ttt.args.MultiType;
 import com.example.shipmentservicelight.ttt.ex.ProcessMethodNotFound;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HandlerMethodInvoker implements IHandlerExecutor {
     private final AbstractHandler handler;
@@ -54,6 +56,12 @@ public class HandlerMethodInvoker implements IHandlerExecutor {
         return Arrays.stream(handler.getClass().getMethods())
                 .filter(x -> x.isAnnotationPresent(HandlerProcess.class))
                 .findFirst().orElseThrow(() -> new ProcessMethodNotFound("Пизда, не нашелся ни один норм метод"));
+    }
+    public List<Field>  getFieldsByAnnotation(Class<? extends Annotation> annotationClazz) {
+        return Arrays.stream(handler.getClass().getDeclaredFields())
+                .filter(field->
+                        field.isAnnotationPresent(annotationClazz))
+                .collect(Collectors.toList());
     }
 
     @Override
