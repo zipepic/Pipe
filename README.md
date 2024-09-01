@@ -81,6 +81,79 @@ context.registerBean(new SomeDependency());
 }
 }
 ```
+
+## Внедрение зависимостей в handler
+
+```java
+import podpivasniki.shortfy.site.branchedpipeline.annotations.StageInject;
+import podpivasniki.shortfy.site.branchedpipeline.handlers.AbstractHandler;
+
+public class MyCustomHandler extends AbstractHandler {
+    @StageInject
+    SomeDependency someDependency;
+
+    @HandlerProcess
+    public Object handle(Object input) {
+        // Логика обработки данных
+        System.out.println("Handling input: " + input);
+        return process(input);
+    }
+}
+```
+Главное не забыть передать ссылку на SomeDependency при конфигурировании Stage
+## Описание yaml файлом
+```yaml
+settings:
+  - name: _integer
+    class: java.lang.Integer
+    value: 101
+  - name: _ImageHeight
+    class: java.lang.Integer
+    value: 101
+  - name: _ImageWidth
+    class: java.lang.Integer
+    value: 101
+
+object_setting:
+  - name: _imageParams
+    class: podpivasniki.shortfy.site.branchedpipeline.testhandlers.ImageParams
+    setter_params:
+      - name: Height
+        ref: _ImageHeight
+      - name: Width
+        ref: _ImageWidth
+
+
+base_domen: podpivasniki.shortfy.site.branchedpipeline
+
+
+services:
+  api:
+    - podpivasniki.shortfy.site.branchedpipeline.testhandlers.ApiClass
+  subject: false
+
+stage:
+  - class: .testhandlers.StringToIntWithBilling
+    constructor_params:
+      - object_ref: _imageParams
+    steps:
+      - addStages:
+          - class: .handlers.Bridge
+      - addStages:
+          - class: .testhandlers.IntToIntWithConstructor
+            constructor_params:
+              - object_ref: _integer
+```
+Построении сдадии по файлу
+```java
+TemplateJson templateJson = mapper.readValue(inputStream, TemplateJson.class);
+        TemplateParser parser = TemplateParser.of(templateJson, apiLoader);
+        parser.prepare();
+
+        // Получаем стадию вызова и выполняем её
+        var invocationStage = parser.getInvokationStage();
+        var result = invocationStage.invoke("aaa4");
+```
 ## Примеры использования
 
 Построение сложных цепочек обработки: Используйте различные обработчики для выполнения последовательных этапов обработки данных.
