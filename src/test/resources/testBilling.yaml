@@ -1,0 +1,40 @@
+settings:
+  - name: _integer
+    class: java.lang.Integer
+    value: 101
+  - name: _ImageHeight
+    class: java.lang.Integer
+    value: 101
+  - name: _ImageWidth
+    class: java.lang.Integer
+    value: 101
+
+object_setting:
+  - name: _imageParams
+    class: podpivasniki.shortfy.site.branchedpipeline.testhandlers.ImageParams
+    setter_params:
+      - name: Height
+        ref: _ImageHeight
+      - name: Width
+        ref: _ImageWidth
+
+
+base_domen: podpivasniki.shortfy.site.branchedpipeline
+
+
+services:
+  api:
+    - podpivasniki.shortfy.site.branchedpipeline.testhandlers.ApiClass
+  subject: false
+
+stage:
+  - class: .testhandlers.StringToIntWithBilling
+    constructor_params:
+      - object_ref: _imageParams
+    steps:
+      - addStages:
+          - class: .handlers.Bridge
+      - addStages:
+          - class: .testhandlers.IntToIntWithConstructor
+            constructor_params:
+              - object_ref: _integer
