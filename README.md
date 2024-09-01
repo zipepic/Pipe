@@ -1,93 +1,88 @@
-# Branched Pipeline
+### Pipe
 
+Pipe — это Java-библиотека, которая предоставляет гибкую инфраструктуру для построения и выполнения этапов (stages) с обработчиками (handlers) в рамках сложных рабочих процессов.
 
+## Основные возможности
 
-## Getting started
+Гибкое конфигурирование: Возможность настраивать и объединять различные этапы выполнения.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Инъекция зависимостей: Поддержка инъекции зависимостей для этапов с использованием контекста.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Обработка исключений: Встроенная поддержка обработки исключений на различных этапах выполнения.
 
-## Add your files
+Расширяемость: Легко расширяемая архитектура, которая позволяет добавлять новые обработчики и этапы.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Установка
 
-```
-cd existing_repo
-git remote add origin https://podpivasniki.shortfy.site/develop/backend/branched-pipeline.git
-git branch -M main
-git push -uf origin main
-```
+Склонируйте репозиторий:
+sh
+Копировать код
+git clone <repository-url>
+Перейдите в директорию проекта:
+sh
+Копировать код
+cd botTg
+Импортируйте проект в вашу IDE (например, IntelliJ IDEA или Eclipse) как Maven-проект.
+Быстрый старт
 
-## Integrate with your tools
+## Создание собственного Handler
+Для того чтобы разработать собственный обработчик (handler) в рамках BotTg, нужно создать класс, который расширяет AbstractHandler и реализует методы для обработки данных.
 
-- [ ] [Set up project integrations](https://podpivasniki.shortfy.site/develop/backend/branched-pipeline/-/settings/integrations)
+# Пример создания обработчика:
 
-## Collaborate with your team
+java
+import podpivasniki.shortfy.site.branchedpipeline.handlers.AbstractHandler;
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+public class MyCustomHandler extends AbstractHandler {
 
-## Test and Deploy
+    @HandlerProcess
+    public Object handle(Object input) {
+        // Логика обработки данных
+        System.out.println("Handling input: " + input);
+        return process(input);
+    }
+}
+## Использование обработчиков в стадии
+Теперь, когда у вас есть обработчик, вы можете добавить его в стадию и выполнить:
 
-Use the built-in continuous integration in GitLab.
+java
+import podpivasniki.shortfy.site.branchedpipeline.stage.MainStage;
+import podpivasniki.shortfy.site.branchedpipeline.handlers.HandlerMethodInvoker;
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+public class Main {
+public static void main(String[] args) {
+MyCustomHandler myHandler = new MyCustomHandler();
+MainStage stage = MainStage.init(myHandler);
 
-***
+        // Конфигурация стадии (опционально)
+        stage.build(/* передать StageContextConfigHandler */);
 
-# Editing this README
+        // Выполнение стадии
+        Object[] results = stage.invoke("Sample Input");
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+        for (Object result : results) {
+            System.out.println("Result: " + result);
+        }
+    }
+}
+## Конфигурирование стадий
+Вы можете настраивать стадии с использованием StageContextConfigHandler. Это позволяет гибко добавлять зависимости и другие параметры для выполнения этапов.
 
-## Suggestions for a good README
+java
+Копировать код
+stage.build(new MyCustomStageConfigHandler());
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+public class MyCustomStageConfigHandler implements StageContextConfigHandler {
+@Override
+public void handle(IStageContext context) {
+// Добавление пользовательских параметров и зависимостей
+context.registerBean(new SomeDependency());
+}
+}
+## Примеры использования
 
-## Name
-Choose a self-explaining name for your project.
+Построение сложных цепочек обработки: Используйте различные обработчики для выполнения последовательных этапов обработки данных.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Интеграция с внешними системами: С помощью кастомных обработчиков вы можете интегрироваться с внешними сервисами, такими как базы данных, API и прочие.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Управление этапами и зависимостями: Используйте конфигурационные обработчики для гибкого управления этапами и их зависимостями.
