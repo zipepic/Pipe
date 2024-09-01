@@ -30,7 +30,7 @@ cd botTg
 
 # Пример создания обработчика:
 
-java
+```java
 import podpivasniki.shortfy.site.branchedpipeline.handlers.AbstractHandler;
 
 public class MyCustomHandler extends AbstractHandler {
@@ -42,10 +42,11 @@ public class MyCustomHandler extends AbstractHandler {
         return process(input);
     }
 }
+```
 ## Использование обработчиков в стадии
 Теперь, когда у вас есть обработчик, вы можете добавить его в стадию и выполнить:
 
-java
+```java
 import podpivasniki.shortfy.site.branchedpipeline.stage.MainStage;
 import podpivasniki.shortfy.site.branchedpipeline.handlers.HandlerMethodInvoker;
 
@@ -56,7 +57,7 @@ MainStage stage = MainStage.init(myHandler);
 
         // Конфигурация стадии (опционально)
         stage.build(/* передать StageContextConfigHandler */);
-
+        stage.configure();
         // Выполнение стадии
         Object[] results = stage.invoke("Sample Input");
 
@@ -65,11 +66,11 @@ MainStage stage = MainStage.init(myHandler);
         }
     }
 }
+```
 ## Конфигурирование стадий
 Вы можете настраивать стадии с использованием StageContextConfigHandler. Это позволяет гибко добавлять зависимости и другие параметры для выполнения этапов.
 
-java
-Копировать код
+```java
 stage.build(new MyCustomStageConfigHandler());
 
 public class MyCustomStageConfigHandler implements StageContextConfigHandler {
@@ -79,6 +80,7 @@ public void handle(IStageContext context) {
 context.registerBean(new SomeDependency());
 }
 }
+```
 ## Примеры использования
 
 Построение сложных цепочек обработки: Используйте различные обработчики для выполнения последовательных этапов обработки данных.
