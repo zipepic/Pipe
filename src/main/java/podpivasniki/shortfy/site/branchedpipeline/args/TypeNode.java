@@ -1,10 +1,12 @@
 package podpivasniki.shortfy.site.branchedpipeline.args;
 
+import lombok.Getter;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.List;
 
+@Getter
 public class TypeNode {
     private final Class<?> type;
     private final List<TypeNode> children;
@@ -14,56 +16,25 @@ public class TypeNode {
         this.children = new ArrayList<>();
     }
 
-    public Class<?> getType() {
-        return type;
-    }
-
-    public int size() {
-        int totalSize = 1; // Начинаем с 1, так как текущий узел тоже считается
-        for (TypeNode child : children) {
-            totalSize += child.size(); // Рекурсивно добавляем размер всех потомков
-        }
-        return totalSize;
-    }
-
-    public List<TypeNode> getChildren() {
-        return children;
-    }
-
-    public void addChild(TypeNode child) {
-        this.children.add(child);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (getClass() != o.getClass()) return false;
-        TypeNode typeNode = (TypeNode) o;
-        if( this.type.equals(Object.class) || typeNode.getType().equals(Object.class)) return true;
-        // If either type is Object, consider them equal
-        if (this.type.isAssignableFrom(typeNode.getType()) || typeNode.getType().isAssignableFrom(this.type)) {
-            return Objects.equals(children, typeNode.children);
-        }
-        return false;
-    }
-    public static List<TypeNode> buildTrees(List<Class<?>> classes){
+    public static List<TypeNode> buildTrees(List<Class<?>> classes) {
         List<TypeNode> res = new ArrayList<>();
         int index = 0;
-        while (index<classes.size()){
+        while (index < classes.size()) {
             TypeNode node = TypeNode.buildRecurs(classes, index);
-            index+=node.size();
+            index += node.size();
             res.add(node);
         }
         return res;
     }
+
     // Рекурсивная функция для построения дерева
     public static TypeNode buildTree(List<Class<?>> classes) {
-        TypeNode node = buildRecurs(classes,0);
-        if(node.size() != classes.size())
+        TypeNode node = buildRecurs(classes, 0);
+        if (node.size() != classes.size())
             throw new RuntimeException("Чет не сошлось");
         return node;
     }
+
     private static TypeNode buildRecurs(List<Class<?>> classes, int index) {
         if (index >= classes.size()) {
             return null; // Если индекс выходит за границы списка, завершаем рекурсию
@@ -76,7 +47,7 @@ public class TypeNode {
         // Получаем количество обобщённых параметров текущего класса
         int typeParamsCount = currentClass.getTypeParameters().length;
 
-        if(index + typeParamsCount >= classes.size())
+        if (index + typeParamsCount >= classes.size())
             throw new RuntimeException("Хуйня мало указал параметров");
 
         // Начинаем с индекса следующего элемента
@@ -92,6 +63,7 @@ public class TypeNode {
         }
         return node;
     }
+
     private static TypeNode recurs(Type type) {
         if (type instanceof ParameterizedType parameterizedType) {
             Type rawType = parameterizedType.getRawType();
@@ -123,27 +95,74 @@ public class TypeNode {
     public static TypeNode buildTree(Type type) {
         return recurs(type);
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, children);
-    }
-    @Override
-    public String toString() {
-        return "TypeNode{" +
-                "type=" + type +
-                ", children=" + children +
-                '}';
-    }
+    
 
     public static TypeNode buildTreeWithValue(Object o) {
         if (o == null) {
             throw new IllegalArgumentException("Object cannot be null");
         }
-        //TODO я хз чет как из Object постоить это дерево, но надо,
-        // глянь тесты в GenericTest c 11 по 13
+        TypeNode node = new TypeNode(o.getClass());
 
-        return TypeNode.recurs(Object.class);
+        if (o instanceof Collection) {
+            var opt = ((Collection) o).stream().findFirst();
+            if (opt.isPresent()) {
+                node.addChild(buildTreeWithValue(opt.get()));
+            }else{
+                node.addChild(TypeNode.recurs(Object.class));
+            }
+        }else if (o instanceof AbstractMap) {
+            var optKey = ((AbstractMap) o).keySet().stream().findFirst();
+            var optValue = ((AbstractMap) o).values().stream().findFirst();
+            if (optKey.isPresent()) {
+                node.addChild(buildTreeWithValue(optKey.get()));
+            }else{
+                node.addChild(TypeNode.recurs(Object.class));
+            }
+            if (optValue.isPresent()) {
+                node.addChild(buildTreeWithValue(optValue.get()));
+            }else{
+                node.addChild(TypeNode.recurs(Object.class));
+            }
+        }
+        return node;
+    }
+    public int size() {
+        int totalSize = 1; // Начинаем с 1, так как текущий узел тоже считается
+        for (TypeNode child : children) {
+            totalSize += child.size(); // Рекурсивно добавляем размер всех потомков
+        }
+        return totalSize;
+    }
+
+    public void addChild(TypeNode child) {
+        this.children.add(child);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (getClass() != o.getClass()) return false;
+        TypeNode typeNode = (TypeNode) o;
+        if (this.type.equals(Object.class) || typeNode.getType().equals(Object.class)) return true;
+        // If either type is Object, consider them equal
+        if (this.type.isAssignableFrom(typeNode.getType()) || typeNode.getType().isAssignableFrom(this.type)) {
+            return Objects.equals(children, typeNode.children);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, children);
+    }
+
+    @Override
+    public String toString() {
+        return "TypeNode{" +
+               "type=" + type +
+               ", children=" + children +
+               '}';
     }
 
 }
